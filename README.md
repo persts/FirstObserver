@@ -15,7 +15,7 @@ First Observer is initially being develop to interface with [CPW Photo Warehouse
 
 *Using CPW Photo Warehouse to evaluate First Observer's species identifications, counts, and bounding boxes.*
 
-###Dependencies
+### Dependencies
 
 First Observer is being developed on Windows 10 with the following libraries:
 
