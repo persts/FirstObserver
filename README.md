@@ -22,6 +22,7 @@ First Observer is being developed on Windows 10 with the following libraries:
 * PyQt5 (5.11.3)
 * Pillow (5.4.1)
 * Numpy (1.15.4)
+* PyOdbc (4.0.25)
 * Opencv-python (3.4.5.20)
 * Torch (1.0.0)
 
