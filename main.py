@@ -22,10 +22,12 @@
 #
 # --------------------------------------------------------------------------
 import sys
+from shutil import copyfile
 from PyQt5 import QtWidgets
 from fobs import __version__, CentralWidget
 
 if __name__ == '__main__':
+    copyfile('_template.accdb', 'sandbox.accdb')
     app = QtWidgets.QApplication(sys.argv)
     main = QtWidgets.QMainWindow()
     main.setWindowTitle('FirstObserver [v {}]'.format(__version__))

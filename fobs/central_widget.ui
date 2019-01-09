@@ -36,6 +36,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonDatabase">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Select Database</string>
         </property>
@@ -98,6 +101,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="pushButtonImport">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Import</string>
         </property>
@@ -121,8 +127,13 @@
       </size>
      </property>
      <property name="title">
-      <string>Display</string>
+      <string>Output</string>
      </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QTextBrowser" name="textBrowser"/>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

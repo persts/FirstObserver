@@ -24,11 +24,13 @@
 import os
 import sys
 import glob
-from PyQt5 import QtCore, QtWidgets, uic
 import pyodbc
+import json
+from PyQt5 import QtCore, QtWidgets, uic
+from andenet.gui import AnnotatorDialog #pylint: disable=E0401
 
 if getattr(sys, 'frozen', False):
-    bundle_dir = sys._MEIPASS
+    bundle_dir = sys._MEIPASS # pylint: disable=E1101
 else:
     bundle_dir = os.path.dirname(__file__)
 CLASS_DIALOG, _ = uic.loadUiType(os.path.join(bundle_dir, 'central_widget.ui'))
@@ -42,42 +44,42 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
         self.cursor = None
         self.observers = {}
         self.visits = {}
-        self.database_selected = False
         self.image_directory = ''
         self.image_list = []
+        self.observer_id = None
+        self.visit_id = None
+        self.annotator = None
+        self.annotator_dialog = AnnotatorDialog()
+        self.annotator_dialog.selected.connect(self.set_annotator)
 
-        self.pushButtonAnnotator.clicked.connect(self.select_annotator)
+        self.pushButtonAnnotator.clicked.connect(self.annotator_dialog.show)
         self.pushButtonDatabase.clicked.connect(self.select_database)
         self.pushButtonImport.clicked.connect(self.prep_import)
 
     def prep_import(self):
-        if self.database_selected:
-            # Select image directory
-            directory = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Image Folder')
-            if directory != '':
-                # Get image file names
-                self.image_list = []
-                self.image_directory = directory
-                files = glob.glob(os.path.join(self.image_directory, '*'))
-                image_format = [".jpg", ".jpeg", ".png"]
-                self.image_list = list(filter(lambda x: os.path.splitext(x)[1].lower() in image_format, files))
-                self.image_list = [os.path.basename(x) for x in self.image_list]
-                sorted(self.image_list)
+        # Select image directory
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Image Folder')
+        if directory != '':
+            # Get image file names
+            self.image_list = []
+            self.image_directory = directory
+            files = glob.glob(os.path.join(self.image_directory, '*'))
+            image_format = [".jpg", ".jpeg", ".png"]
+            self.image_list = list(filter(lambda x: os.path.splitext(x)[1].lower() in image_format, files))
+            self.image_list = [os.path.basename(x) for x in self.image_list]
+            sorted(self.image_list)
 
-                # Get the observer and visit id
-                observer = self.comboBoxObservers.currentText()
-                visit = self.comboBoxVisits.currentText()
+            # Get the observer and visit id
+            observer = self.comboBoxObservers.currentText()
+            visit = self.comboBoxVisits.currentText()
 
-                observer_id = self.observers[observer]
-                visit_id = self.visits[visit]
+            self.observer_id = self.observers[observer]
+            self.visit_id = self.visits[visit]
 
-                #Print
-                print(self.image_directory)
-                print(observer, observer_id)
-                print(visit, visit_id)
-                print(self.image_list)
-    def select_annotator(self):
-        print('Not implemented')
+            # Start the Annotator
+            self.annotator.image_directory = self.image_directory
+            self.annotator.image_list = self.image_list
+            self.annotator.start()
 
     def select_database(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Select Database', '.', 'Microsoft Access Database (*.accdb)')
@@ -114,6 +116,14 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
             self.comboBoxVisits.clear()
             sorted(visit_list)
             self.comboBoxVisits.addItems(visit_list)
-            self.database_selected = True
+            self.pushButtonImport.setDisabled(False)
+
+    def set_annotator(self, annotator):
+        self.annotator = annotator
+        self.annotator.progress.connect(self.update_database)
+        self.pushButtonDatabase.setDisabled(False)
+    
+    def update_database(self, count, image, annotations):
+        self.textBrowser.append(json.dumps(annotations))
 
             
