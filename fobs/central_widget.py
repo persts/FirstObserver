@@ -26,6 +26,7 @@ import sys
 import glob
 import pyodbc
 import json
+import datetime
 from PyQt5 import QtCore, QtWidgets, uic
 from andenet.gui import AnnotatorDialog #pylint: disable=E0401
 
@@ -41,9 +42,11 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self)
         self.setupUi(self)
+        self.connection = None
         self.cursor = None
         self.observers = {}
         self.visits = {}
+        self.species = {}
         self.image_directory = ''
         self.image_list = []
         self.observer_id = None
@@ -73,8 +76,8 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
             observer = self.comboBoxObservers.currentText()
             visit = self.comboBoxVisits.currentText()
 
-            self.observer_id = self.observers[observer]
-            self.visit_id = self.visits[visit]
+            self.observer_id = float(self.observers[observer])
+            self.visit_id = float(self.visits[visit])
 
             # Start the Annotator
             self.annotator.image_directory = self.image_directory
@@ -87,6 +90,13 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
             self.connection = pyodbc.connect('DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + file_name[0])
             self.cursor = self.connection.cursor()
 
+            # Build a simple lookup table
+            self.species = {}
+            results = self.cursor.execute('SELECT * FROM Species').fetchall()
+            for s in results:
+                self.species[s[1]] =float(s[0])
+
+            # Build lookup keys and tables for observer and visit id
             self.comboBoxObservers.clear()
             results = self.cursor.execute('SELECT * FROM Observers').fetchall()
             self.observers = {}
@@ -123,7 +133,33 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
         self.annotator.progress.connect(self.update_database)
         self.pushButtonDatabase.setDisabled(False)
     
-    def update_database(self, count, image, annotations):
-        self.textBrowser.append(json.dumps(annotations))
+    def update_database(self, count, image, rec):
+        image_dir = QtCore.QDir.toNativeSeparators(self.image_directory + "/")
+        self.textBrowser.append(os.path.join(image_dir, image))
+        # Store image
+        timestamp = os.path.getctime(os.path.join(self.image_directory, image))
+        timestamp = datetime.datetime.fromtimestamp(timestamp)
+        self.cursor.execute('INSERT INTO Photos (ImageNum, FileName, ImageDate, FilePath, VisitID) VALUES (?, ?, ?, ?, ?)', (count + 1.0, image, timestamp, image_dir, self.visit_id))
+        self.connection.commit()
+        id = float(self.cursor.execute('SELECT @@Identity').fetchone()[0])
 
+        # Add species identifications and bounding boxes
+        detections = {}
+        for a in rec['annotations']:
+            bbox = a['bbox']
+            XLen = (bbox['xmax'] - bbox['xmin'])
+            YLen = (bbox['ymax'] - bbox['ymin'])
+            TagX = bbox['xmin'] + (XLen / 2.0)
+            TagY = bbox['ymin'] + (YLen / 2.0)
+            self.cursor.execute('INSERT INTO PhotoTags (TagX, TagY, XLen, YLen, ImageID, ObsID) values (?, ?, ?, ?, ?, ?)', (TagX, TagY, XLen, YLen, id, self.observer_id))
+            if a['label'] not in detections:
+                detections[a['label']] = 1.0
+            else:
+                detections[a['label']] += 1.0
+        
+        for d in detections.keys():
+            self.textBrowser.append("\t{} - {}".format(detections[d], d))
+            self.cursor.execute('INSERT INTO Detections (SpeciesID, Individuals, ObsID, ImageID) values (?, ?, ?, ?)', (self.species[d], detections[d], self.observer_id, id))
+        self.connection.commit()
+        self.textBrowser.append("\n")
             
