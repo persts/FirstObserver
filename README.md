@@ -15,6 +15,8 @@ First Observer is initially being develop to interface with [CPW Photo Warehouse
 
 *Using CPW Photo Warehouse to evaluate First Observer's species identifications, counts, and bounding boxes.*
 
+This is an emerging project currently under development. More information will be available soon.
+
 ### Dependencies
 
 First Observer is being developed on Windows 10 with the following libraries:
@@ -26,8 +28,12 @@ First Observer is being developed on Windows 10 with the following libraries:
 * Opencv-python (3.4.5.20)
 * Torch (1.0.0)
 
-This is an emerging project currently under development. More information will be available soon.
-
+### Install (general outline)
+1. Follow the instructions to install [Andenet-Desktop](https://github.com/persts/andenet-desktop) with support for YOLOv3
+2. Make sure Andenet-Desktop and Yolov3 are in your PYTHONPATH
+3. pip install pyodbc
+4. Download FirstObserver
+5. Lauch the app by calling 'python main.py' from the FirstObserver directory
 
 
 ###### Acknowledgements
