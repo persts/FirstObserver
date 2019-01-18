@@ -27,7 +27,8 @@ import glob
 import pyodbc
 import json
 import datetime
-from PyQt5 import QtCore, QtWidgets, uic
+from PIL import Image, ImageQt
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from andenet.gui import AnnotatorDialog #pylint: disable=E0401
 
 if getattr(sys, 'frozen', False):
@@ -55,9 +56,42 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
         self.annotator_dialog = AnnotatorDialog()
         self.annotator_dialog.selected.connect(self.set_annotator)
 
+        self.graphics_scene = QtWidgets.QGraphicsScene()
+        self.graphicsView.setScene(self.graphics_scene)
+
         self.pushButtonAnnotator.clicked.connect(self.annotator_dialog.show)
         self.pushButtonDatabase.clicked.connect(self.select_database)
         self.pushButtonImport.clicked.connect(self.prep_import)
+
+    def annotator_finished(self):
+        self.textBrowser.append('Import Complete.')
+
+    def display_image(self, image, record):
+        img = Image.open(image)
+        width, height = img.size
+        self.graphics_scene.clear()
+        self.qImage = ImageQt.ImageQt(img)
+        self.graphics_scene.addPixmap(QtGui.QPixmap.fromImage(self.qImage))
+        self.graphicsView.fitInView(self.graphics_scene.itemsBoundingRect(), QtCore.Qt.KeepAspectRatio)
+        self.graphicsView.setSceneRect(self.graphics_scene.itemsBoundingRect())
+
+        pen = QtGui.QPen(QtGui.QBrush(QtCore.Qt.yellow, QtCore.Qt.SolidPattern), 3)
+        font = QtGui.QFont()
+        for a in record['annotations']:
+            bbox = a['bbox']
+            top_left = QtCore.QPointF(bbox['xmin'] * width, bbox['ymin'] * height)
+            bottom_right = QtCore.QPointF(bbox['xmax'] * width, bbox['ymax'] * height)
+            rect = QtCore.QRectF(top_left, bottom_right)
+            graphics_item = self.graphics_scene.addRect(rect, pen)
+            font.setPointSize(int(rect.width() * 0.065))
+            text = QtWidgets.QGraphicsTextItem(a['label'])
+            text.setFont(font)
+            text.setPos(rect.topLeft().toPoint())
+            text.setDefaultTextColor(QtCore.Qt.yellow)
+            x_offset = text.boundingRect().width() / 2.0
+            y_offset = text.boundingRect().height() / 2.0
+            text.moveBy((rect.width() / 2.0) - x_offset, (rect.height() / 2.0) - y_offset)
+            text.setParentItem(graphics_item)
 
     def prep_import(self):
         # Select image directory
@@ -132,10 +166,12 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
         self.annotator = annotator
         self.annotator.progress.connect(self.update_database)
         self.pushButtonDatabase.setDisabled(False)
+        self.annotator.finished.connect(self.annotator_finished)
     
     def update_database(self, count, image, rec):
         image_dir = QtCore.QDir.toNativeSeparators(self.image_directory + "/")
         self.textBrowser.append(os.path.join(image_dir, image))
+        self.display_image(os.path.join(image_dir, image), rec)
         # Store image
         timestamp = os.path.getctime(os.path.join(self.image_directory, image))
         timestamp = datetime.datetime.fromtimestamp(timestamp)
