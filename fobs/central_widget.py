@@ -152,7 +152,7 @@ class CentralWidget(QtWidgets.QWidget, CLASS_DIALOG):
                 types[row[0]] = row[1]
             self.visits = {}
             visit_list = []
-            results = self.cursor.execute('SELECT VisitID, LocationID, VisitTypeID, VisitDate FROM Visits')
+            results = self.cursor.execute('SELECT VisitID, LocationID, VisitTypeID, VisitDate FROM Visits WHERE VisitTypeID < 3')
             for row in results:
                 visit = '{}#{}#{}'.format(locations[row[1]], types[row[2]], row[3])
                 visit_list.append(visit)
