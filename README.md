@@ -5,8 +5,8 @@ First Observer is a species detection and database import tool. The objective of
 First Observer is initially being develop to interface with [CPW Photo Warehouse](https://cpw.state.co.us/learn/Pages/ResearchMammalsSoftware.aspx), a custom Microsoft Access application designed to facilitate archiving, identifying, summarizing, and analyzing photo data collected from remote wildlife cameras.
 
 ###Basic Data Pipeline
-1. Annotate image data for your project, using your favorite annotation tool, such as [Andenet-Desktop](https://github.com/persts/andenet-desktop)
-2. Build an object detection model in Torch (YOLOv3) *\*Additional models and frameworks supported soon*
+1. Annotate image data for your project, using your favorite annotation tool, such as [BBoxEE](https://github.com/persts/BBoxEE)
+2. Build an object detection model in Torch (YOLOv3) or tensorflow
 3. Launch First Observer
 4. Select existing model and directory of new image data to analyze and import into database
 5. Have a second observer (human) review & correct identifications in the database as normal
@@ -26,11 +26,12 @@ First Observer is being developed on Windows 10 with the following libraries:
 * Numpy (1.15.4)
 * PyOdbc (4.0.25)
 * Opencv-python (3.4.5.20)
+* Tensorflow (1.15)
 * Torch (1.0.0)
 
 ### Install (general outline)
-1. Follow the instructions to install [Andenet-Desktop](https://github.com/persts/andenet-desktop) with support for YOLOv3
-2. Make sure Andenet-Desktop and Yolov3 are in your PYTHONPATH
+1. Follow the instructions to install [BBoxEE](https://github.com/persts/BBoxEE)
+2. Make sure BBoxEE and Yolov3 (if using) are in your PYTHONPATH
 3. pip install pyodbc
 4. Download FirstObserver
 5. Lauch the app by calling 'python main.py' from the FirstObserver directory
